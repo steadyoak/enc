@@ -30,7 +30,7 @@
     // 生成二维码并下载
     const qrCodeData = url;
     const date = new Date();
-    const fileName = `decr_${date.getFullYear().toString().slice(-2)}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}${date.getHours().toString().padStart(2, '0')}${date.getMinutes().toString().padStart(2, '0')}${date.getSeconds().toString().padStart(2, '0')}.png`;
+    const fileName = `decry_${date.getFullYear().toString().slice(-2)}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}${date.getHours().toString().padStart(2, '0')}${date.getMinutes().toString().padStart(2, '0')}${date.getSeconds().toString().padStart(2, '0')}.png`;
     
     // 生成二维码
     QRCode.toDataURL(qrCodeData, { width: 256, height: 256 }, function (err, url) {
