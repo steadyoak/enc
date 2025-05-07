@@ -24,7 +24,7 @@
     const safeB64 = a => btoa(String.fromCharCode(...new Uint8Array(a)))
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 
-    const url = `https://decry.netlify.app/?a=${safeB64(s)}&b=${safeB64(i)}&c=${safeB64(ct)}`;
+    const url = `https://decry.netlify.app/?d=${safeB64(s)}.${safeB64(i)}.${safeB64(ct)}`;
     document.getElementById('out').value = url;
 
     // 生成二维码并下载
