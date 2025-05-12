@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Encrypt to URL-safe Base64</title>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
   <style>
     body {
       background: #111;
@@ -36,11 +35,12 @@
     button:hover {
       background: #555;
     }
-    img {
-      display: block;
+    #qr {
+      display: none;
       margin-top: 20px;
       width: 256px;
       height: 256px;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -49,46 +49,93 @@
   <textarea id="plain" rows="4"></textarea>
   <h3>密钥</h3>
   <input type="password" id="key">
-  <button onclick="(async()=>{
-    const e = new TextEncoder();
-    const t = document.getElementById('plain').value;
-    const k = document.getElementById('key').value;
-    const s = crypto.getRandomValues(new Uint8Array(16));
-    const i = crypto.getRandomValues(new Uint8Array(16));
-    const rawKey = await crypto.subtle.importKey('raw', e.encode(k), {name:'PBKDF2'}, false, ['deriveKey']);
-    const aesKey = await crypto.subtle.deriveKey({name:'PBKDF2',salt:s,iterations:1e5,hash:'SHA-256'}, rawKey, {name:'AES-CBC',length:256}, false, ['encrypt']);
-    const ct = await crypto.subtle.encrypt({name:'AES-CBC',iv:i}, aesKey, e.encode(t));
-
-    const safeB64 = a => btoa(String.fromCharCode(...new Uint8Array(a)))
-      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-
-    const url = `https://decry.netlify.app/?d=${safeB64(s)}.${safeB64(i)}.${safeB64(ct)}`;
-    document.getElementById('out').value = url;
-
-    const qrCodeData = url;
-    const date = new Date();
-    const fileName = `decry_${date.getFullYear().toString().slice(-2)}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}${date.getHours().toString().padStart(2, '0')}${date.getMinutes().toString().padStart(2, '0')}${date.getSeconds().toString().padStart(2, '0')}.png`;
-    
-    QRCode.toDataURL(qrCodeData, { width: 256, height: 256 }, function (err, url) {
-      if (err) {
-        console.error(err);
-        return;
-      }
-      const qrImage = document.getElementById('qr');
-      qrImage.src = url;
-      qrImage.onclick = function () {
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        a.click();
-      };
-    });
-  })()">加密生成链接</button>
+  <button onclick="generate()">加密生成链接</button>
 
   <h3>生成链接</h3>
   <textarea id="out" rows="3" readonly></textarea>
 
   <h3>二维码</h3>
-  <img id="qr" alt="QR Code" style="cursor: pointer;">
+  <canvas id="qr" width="256" height="256"></canvas>
+
+  <script src="qrious.min.js"></script>
+  <script>
+    class QRious {
+      constructor(options = {}) {
+        this.element = options.element || document.createElement('canvas');
+        this.qr = null;
+        this.set(options);
+      }
+      set(options) {
+        for (const key in options) {
+          this[key] = options[key];
+        }
+        this.update();
+      }
+      update() {
+        const qr = new window.QRCodeModel(-1, QRErrorCorrectLevel.H);
+        qr.addData(this.value);
+        qr.make();
+
+        const size = this.size || 100;
+        const cells = qr.getModuleCount();
+        const tile = size / cells;
+        const ctx = this.element.getContext('2d');
+        ctx.clearRect(0, 0, size, size);
+
+        for (let row = 0; row < cells; row++) {
+          for (let col = 0; col < cells; col++) {
+            ctx.fillStyle = qr.isDark(row, col) ? this.foreground : this.background;
+            ctx.fillRect(Math.round(col * tile), Math.round(row * tile), Math.ceil(tile), Math.ceil(tile));
+          }
+        }
+      }
+    }
+
+    // 引入 QRCodeModel 和 QRErrorCorrectLevel（QRious 的依赖）
+    // 这段代码来自 QRious 项目内嵌源码的简化版本
+    /*! Simplified QRCodeModel from qrcode-generator */
+    const QRErrorCorrectLevel = {L: 1, M: 0, Q: 3, H: 2};
+    // 这里只展示框架，你可以使用 https://github.com/kazuhikoarase/qrcode-generator 项目中合适版本内嵌
+    // 为方便我可以帮你嵌入完整版（或压缩后的）
+
+    // 加密函数
+    async function generate() {
+      const e = new TextEncoder();
+      const t = document.getElementById('plain').value;
+      const k = document.getElementById('key').value;
+      const s = crypto.getRandomValues(new Uint8Array(16));
+      const i = crypto.getRandomValues(new Uint8Array(16));
+      const rawKey = await crypto.subtle.importKey('raw', e.encode(k), {name: 'PBKDF2'}, false, ['deriveKey']);
+      const aesKey = await crypto.subtle.deriveKey({name: 'PBKDF2', salt: s, iterations: 1e5, hash: 'SHA-256'}, rawKey, {name: 'AES-CBC', length: 256}, false, ['encrypt']);
+      const ct = await crypto.subtle.encrypt({name: 'AES-CBC', iv: i}, aesKey, e.encode(t));
+
+      const safeB64 = a => btoa(String.fromCharCode(...new Uint8Array(a)))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+
+      const url = `https://decry.netlify.app/?d=${safeB64(s)}.${safeB64(i)}.${safeB64(ct)}`;
+      document.getElementById('out').value = url;
+
+      // 显示二维码
+      const qrCanvas = document.getElementById('qr');
+      qrCanvas.style.display = 'block';
+
+      const qr = new QRious({
+        element: qrCanvas,
+        value: url,
+        size: 256,
+        background: '#fff',
+        foreground: '#000'
+      });
+
+      qrCanvas.onclick = function () {
+        const a = document.createElement('a');
+        a.href = qrCanvas.toDataURL('image/png');
+        const date = new Date();
+        const fileName = `decry_${date.getFullYear().toString().slice(-2)}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}${date.getHours().toString().padStart(2, '0')}${date.getMinutes().toString().padStart(2, '0')}${date.getSeconds().toString().padStart(2, '0')}.png`;
+        a.download = fileName;
+        a.click();
+      };
+    }
+  </script>
 </body>
 </html>
