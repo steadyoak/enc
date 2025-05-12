@@ -47,17 +47,25 @@
 <body>
   <h3>明文</h3>
   <textarea id="plain" rows="4"></textarea>
+
   <h3>密钥</h3>
   <input type="password" id="key">
-  <button onclick="(async()=>{
+
+  <button onclick="(async()=> {
     const e = new TextEncoder();
     const t = document.getElementById('plain').value;
     const k = document.getElementById('key').value;
     const s = crypto.getRandomValues(new Uint8Array(16));
     const i = crypto.getRandomValues(new Uint8Array(16));
     const rawKey = await crypto.subtle.importKey('raw', e.encode(k), {name:'PBKDF2'}, false, ['deriveKey']);
-    const aesKey = await crypto.subtle.deriveKey({name:'PBKDF2',salt:s,iterations:1e5,hash:'SHA-256'}, rawKey, {name:'AES-CBC',length:256}, false, ['encrypt']);
-    const ct = await crypto.subtle.encrypt({name:'AES-CBC',iv:i}, aesKey, e.encode(t));
+    const aesKey = await crypto.subtle.deriveKey(
+      {name:'PBKDF2', salt:s, iterations:1e5, hash:'SHA-256'},
+      rawKey,
+      {name:'AES-CBC', length:256},
+      false,
+      ['encrypt']
+    );
+    const ct = await crypto.subtle.encrypt({name:'AES-CBC', iv:i}, aesKey, e.encode(t));
 
     const safeB64 = a => btoa(String.fromCharCode(...new Uint8Array(a)))
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
@@ -67,19 +75,19 @@
 
     const qrCodeData = url;
     const date = new Date();
-    const fileName = decry_${date.getFullYear().toString().slice(-2)}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}${date.getHours().toString().padStart(2, '0')}${date.getMinutes().toString().padStart(2, '0')}${date.getSeconds().toString().padStart(2, '0')}.png;
-    
-    QRCode.toDataURL(qrCodeData, { width: 256, height: 256 }, function (err, url) {
+    const fileName = `decry_${date.getFullYear().toString().slice(-2)}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}${date.getHours().toString().padStart(2, '0')}${date.getMinutes().toString().padStart(2, '0')}${date.getSeconds().toString().padStart(2, '0')}.png`;
+
+    QRCode.toDataURL(qrCodeData, { width: 256, height: 256 }, function (err, qrUrl) {
       if (err) {
         console.error(err);
         return;
       }
       const qrImage = document.getElementById('qr');
-      qrImage.src = url;
+      qrImage.src = qrUrl;
       qrImage.style.display = 'block'; // 显示二维码
       qrImage.onclick = function () {
         const a = document.createElement('a');
-        a.href = url;
+        a.href = qrUrl;
         a.download = fileName;
         a.click();
       };
