@@ -62,7 +62,7 @@
     const safeB64 = a => btoa(String.fromCharCode(...new Uint8Array(a)))
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 
-    const url = https://decry.netlify.app/?d=${safeB64(s)}.${safeB64(i)}.${safeB64(ct)};
+    const url = `https://decry.netlify.app/?d=${safeB64(s)}.${safeB64(i)}.${safeB64(ct)}`;
     document.getElementById('out').value = url;
 
     const qrCodeData = url;
@@ -76,6 +76,7 @@
       }
       const qrImage = document.getElementById('qr');
       qrImage.src = url;
+      qrImage.style.display = 'block'; // 显示二维码
       qrImage.onclick = function () {
         const a = document.createElement('a');
         a.href = url;
@@ -89,6 +90,6 @@
   <textarea id="out" rows="3" readonly></textarea>
 
   <h3>二维码</h3>
-  <img id="qr" alt="QR Code" style="cursor: pointer;">
+  <img id="qr" alt="QR Code" style="cursor: pointer; display: none;">
 </body>
 </html>
